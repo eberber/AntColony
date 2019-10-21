@@ -1,4 +1,5 @@
 import random
+import numpy
 
 class ant:
     antPheromoneAmount = 0.0
@@ -37,9 +38,9 @@ def initLinks(file):
     with open(file) as file:
         lines = [line.split() for line in file]
     for i in range(1,len(lines)):
-        print(lines[i])
+        #print(lines[i])
         for j in range(1,len(lines[i])):
-            print(lines[i][j])
+            #print(lines[i][j])
             if lines[i][j] == '0':
                 continue
             else:
@@ -59,29 +60,30 @@ def initLinks(file):
 
 def inTabuList(city, tabuList):
     for i in tabuList:
-        if city == tabuList:
+        if city == i:
             return True
     return False
 
 def citySelection(newAnt, city, alpha, beta):
-    if inTabuList(city.city, newAnt.tabuList):
-        return False
     #compute probability of each link and sum them for each link from where the ant currently is
     for i in city.atttachedLinks:
         link = i
         denominator = pow(link.linkPheromoneAmount, alpha) * pow(1/ link.distance, beta)
         denominator += denominator
     #compute prob using diff numerator for each link and sum them
+    totalProb = 0
     for i in city.atttachedLinks:
         link  = i
         numerator = pow(link.linkPheromoneAmount, alpha) * pow(1/ link.distance, beta)
         link.probability = numerator / denominator      
         totalProb += link.probability
-    finalProb = random.uniform(0, totalProb) #choose rand value between  0 and sum of all links prob
+    finalProb = round(random.uniform(0, totalProb), 2) #choose rand value between  0 and sum of all links prob
     x = 0
+    y = 0
     for i in city.atttachedLinks:
+        link = i
         y += link.probability
-        if finalProb in range(x, y): # if our guess is within prev link and curr, choose curr links destination city
+        if x <= finalProb <= y: # if our guess is within prev link and curr, choose curr links destination city
             link.linkPheromoneAmount = newAnt.antPheromoneAmount / link.distance #add pheromone
             return link.end
         else:
@@ -100,15 +102,15 @@ def antTour(newAnt, city, cityList):
     else:
         for i in cityList:
             if choice == i.city: #search for the next city to start from
-                antTour(newAnt, i.city, cityList)
-
+                print("Ant is going to: ", i.city)
+                antTour(newAnt, i, cityList)
 
 def cityTour(numbAnts):
     file = "map1.txt"
     cities, availableCities = initLinks(file)
     #iterate through each city and the num ants there
     for i in cities:
-        for j in i.numberAnts:
+        for j in range(i.numberAnts):
             newAnt = ant(120,0.0, [])
             #each ant is completing a tour
             antTour(newAnt, i, cities)           
