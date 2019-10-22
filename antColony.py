@@ -1,6 +1,11 @@
 import random
 import numpy
-
+#################       GLOBAL VARIABLES        ###################
+max = 0.0
+avg = 0.0
+min = 0.0
+totalDistance = 0.0
+#################       OBJECTS     #########################
 class ant:
     antPheromoneAmount = 0.0
     totalDistanceTraveled = 0.0
@@ -30,7 +35,7 @@ class city:
         self.city = city
         self.numberAnts = numberAnts        
         self.atttachedLinks = atttachedLinks
-
+################        GLOBAL FUNCTIONS        ##################
 #returns a list of links from the file
 def initLinks(file):
     linkList = []
@@ -60,35 +65,62 @@ def initLinks(file):
 
 def inTabuList(city, tabuList):
     for i in tabuList:
-        if city == i:
+        if city == i: #compares two chars of the city ex: 'C' and 'A'
             return True
     return False
+#compute min, max ,avg
+def stats(newAnt, antCount):
+    global max
+    global min
+    global avg
+    global totalDistance
+    #set init max and min to first ants travel distance
+    if min == 0.0:
+        min = newAnt.totalDistanceTraveled
+    if max == 0.0:
+        max = newAnt.totalDistanceTraveled
+
+    if newAnt.totalDistanceTraveled < min:
+        min = newAnt.totalDistanceTraveled
+    elif newAnt.totalDistanceTraveled > max:
+        max = newAnt.totalDistanceTraveled
+    totalDistance += newAnt.totalDistanceTraveled
+    avg = round(totalDistance / antCount, 2)
+    print("MAX: ",max)
+    print("MIN: ",min)
+    print("AVG: ",avg)    
 
 def citySelection(newAnt, city, alpha, beta):
     #compute probability of each link and sum them for each link from where the ant currently is
     for i in city.atttachedLinks:
-        link = i
-        denominator = pow(link.linkPheromoneAmount, alpha) * pow(1/ link.distance, beta)
-        denominator += denominator
+        if i.end in newAnt.tabuList: #skip over links that take us to a city we have already been to
+            continue
+        else:
+            denominator = pow(i.linkPheromoneAmount, alpha) * pow(1/ i.distance, beta)
+            denominator += denominator
     #compute prob using diff numerator for each link and sum them
     totalProb = 0
     for i in city.atttachedLinks:
-        link  = i
-        numerator = pow(link.linkPheromoneAmount, alpha) * pow(1/ link.distance, beta)
-        link.probability = numerator / denominator      
-        totalProb += link.probability
+        if i.end in newAnt.tabuList:#skip over links that take us to a city we have already been to
+            continue
+        else:
+            numerator = pow(i.linkPheromoneAmount, alpha) * pow(1/ i.distance, beta)
+            i.probability = numerator / denominator  #each links prob is updated 
+            totalProb += i.probability
     finalProb = round(random.uniform(0, totalProb), 2) #choose rand value between  0 and sum of all links prob
     x = 0
     y = 0
     for i in city.atttachedLinks:
-        link = i
-        y += link.probability
-        if x <= finalProb <= y: # if our guess is within prev link and curr, choose curr links destination city
-            link.linkPheromoneAmount = newAnt.antPheromoneAmount / link.distance #add pheromone
-            return link.end
+        if i.end in newAnt.tabuList:
+            continue
         else:
-            x += link.probability
-
+            y += i.probability
+            if x <= finalProb <= y: # if our guess is within prev link and curr, choose curr links destination city
+                i.linkPheromoneAmount = newAnt.antPheromoneAmount / i.distance #add pheromone
+                newAnt.totalDistanceTraveled += i.distance #update distance traveled
+                return i.end
+            else:
+                x += i.probability
     return False #error
 
 #recursively selects a new city until all are visited
@@ -97,25 +129,31 @@ def antTour(newAnt, city, cityList):
         return
     newAnt.tabuList.append(city.city)#add the ants current city to its tabu list  
     choice = citySelection(newAnt, city, 1 ,1)
-    if choice == False:
+
+    if not choice:
         return
     else:
         for i in cityList:
             if choice == i.city: #search for the next city to start from
                 print("Ant is going to: ", i.city)
-                antTour(newAnt, i, cityList)
+                antTour(newAnt, i, cityList) #pass that city object recursively
 
 def cityTour(numbAnts):
-    file = "map1.txt"
+    file = "map6.txt"
     cities, availableCities = initLinks(file)
+    antCount = 0
     #iterate through each city and the num ants there
     for i in cities:
+        print("###########       START CITY        #########", i.city)
         for j in range(i.numberAnts):
             newAnt = ant(120,0.0, [])
+            antCount += 1
             #each ant is completing a tour
-            antTour(newAnt, i, cities)           
+            print("####     ANT     ####", j)
+            antTour(newAnt, i, cities)
+            print("Distance traveled: ", newAnt.totalDistanceTraveled)
+            stats(newAnt, antCount)           
 
-    
 def main():    
     numbAnts = 2
     cityTour(numbAnts)
