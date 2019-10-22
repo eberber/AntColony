@@ -5,6 +5,11 @@ max = 0.0
 avg = 0.0
 min = 0.0
 totalDistance = 0.0
+alpha = 0.0
+beta = 0.0
+QPheromone = 0.0
+antPerCity = 0
+file = ""
 #################       OBJECTS     #########################
 class ant:
     antPheromoneAmount = 0.0
@@ -37,8 +42,10 @@ class city:
         self.atttachedLinks = atttachedLinks
 ################        GLOBAL FUNCTIONS        ##################
 #returns a list of links from the file
-def initLinks(file):
+def initLinks():
     linkList = []
+    global file
+    global antPerCity
 
     with open(file) as file:
         lines = [line.split() for line in file]
@@ -56,7 +63,7 @@ def initLinks(file):
     availableCities = lines[0]
     citiesList = []
     for i in availableCities:
-        newCity = city(i, 2, [])
+        newCity = city(i, antPerCity, [])
         for j in range(len(linkList)):
             if i == linkList[j].start:
                 newCity.atttachedLinks.append(linkList[j])
@@ -90,7 +97,9 @@ def stats(newAnt, antCount):
     print("MIN: ",min)
     print("AVG: ",avg)    
 
-def citySelection(newAnt, city, alpha, beta):
+def citySelection(newAnt, city):
+    global alpha
+    global beta
     #compute probability of each link and sum them for each link from where the ant currently is
     for i in city.atttachedLinks:
         if i.end in newAnt.tabuList: #skip over links that take us to a city we have already been to
@@ -128,7 +137,7 @@ def antTour(newAnt, city, cityList):
     if inTabuList(city.city, newAnt.tabuList): #check if we have visited this city
         return
     newAnt.tabuList.append(city.city)#add the ants current city to its tabu list  
-    choice = citySelection(newAnt, city, 1 ,1)
+    choice = citySelection(newAnt, city)
 
     if not choice:
         return
@@ -138,15 +147,16 @@ def antTour(newAnt, city, cityList):
                 print("Ant is going to: ", i.city)
                 antTour(newAnt, i, cityList) #pass that city object recursively
 
-def cityTour(numbAnts):
-    file = "map6.txt"
-    cities, availableCities = initLinks(file)
+def cityTour():
+    global QPheromone
+
+    cities, availableCities = initLinks()
     antCount = 0
     #iterate through each city and the num ants there
     for i in cities:
         print("###########       START CITY        #########", i.city)
         for j in range(i.numberAnts):
-            newAnt = ant(120,0.0, [])
+            newAnt = ant(QPheromone,0.0, [])
             antCount += 1
             #each ant is completing a tour
             print("####     ANT     ####", j)
@@ -154,9 +164,25 @@ def cityTour(numbAnts):
             print("Distance traveled: ", newAnt.totalDistanceTraveled)
             stats(newAnt, antCount)           
 
-def main():    
-    numbAnts = 2
-    cityTour(numbAnts)
+def main():        
+    global alpha
+    global beta
+    global QPheromone
+    global file
+    global antPerCity
+
+    print("ANT PER CITY: ")
+    antPerCity = int(input())
+    print("ALPHA: ")
+    alpha = float(input())
+    print("BETA: ")
+    beta = float(input())
+    print("ANT PHEROMONE Q: ")
+    QPheromone = float(input())
+    print("FILE NAME: ")
+    file = input()
+
+    cityTour()
 
 if __name__ == "__main__":
     main()
