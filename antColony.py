@@ -10,6 +10,7 @@ beta = 0.0
 QPheromone = 0.0
 antPerCity = 0
 file = ""
+numIterations = 0
 #################       OBJECTS     #########################
 class ant:
     antPheromoneAmount = 0.0
@@ -147,22 +148,36 @@ def antTour(newAnt, city, cityList):
                 print("Ant is going to: ", i.city)
                 antTour(newAnt, i, cityList) #pass that city object recursively
 
+#finds the link that takes you home from the current city ant is at
+def returnHome(newAnt, cityList):
+    for i in cityList:
+        if i.city == newAnt.tabuList[-1]: #if the city was the last visited by ant
+            for j in i.atttachedLinks:
+                if j.end == newAnt.tabuList[0]:#if the destination is the start of where ant traveled
+                    newAnt.totalDistanceTraveled += j.distance
+                    print("Going home...", j.end)               
+
+
 def cityTour():
     global QPheromone
+    global numIterations
 
     cities, availableCities = initLinks()
     antCount = 0
-    #iterate through each city and the num ants there
-    for i in cities:
-        print("###########       START CITY        #########", i.city)
-        for j in range(i.numberAnts):
-            newAnt = ant(QPheromone,0.0, [])
-            antCount += 1
-            #each ant is completing a tour
-            print("####     ANT     ####", j)
-            antTour(newAnt, i, cities)
-            print("Distance traveled: ", newAnt.totalDistanceTraveled)
-            stats(newAnt, antCount)           
+    for n in range(numIterations): # run for n iterations
+        print("######################### ITERATION #######################", n)
+        #iterate through each city and the num ants there
+        for i in cities:
+            print("###########       START CITY        #########", i.city)
+            for j in range(i.numberAnts):
+                newAnt = ant(QPheromone,0.0, [])
+                antCount += 1
+                #each ant is completing a tour
+                print("####     ANT     ####", j)
+                antTour(newAnt, i, cities)
+                returnHome(newAnt, cities)
+                print("Distance traveled: ", newAnt.totalDistanceTraveled)
+                stats(newAnt, antCount)           
 
 def main():        
     global alpha
@@ -170,6 +185,7 @@ def main():
     global QPheromone
     global file
     global antPerCity
+    global numIterations
 
     print("ANT PER CITY: ")
     antPerCity = int(input())
@@ -179,6 +195,8 @@ def main():
     beta = float(input())
     print("ANT PHEROMONE Q: ")
     QPheromone = float(input())
+    print("NUMBER OF ITERATIONS TO RUN: ")
+    numIterations = int(input())
     print("FILE NAME: ")
     file = input()
 
