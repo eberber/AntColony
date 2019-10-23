@@ -5,12 +5,13 @@ max = 0.0
 avg = 0.0
 min = 0.0
 totalDistance = 0.0
-alpha = 0.0
-beta = 0.0
-QPheromone = 0.0
-antPerCity = 0
-file = ""
-numIterations = 0
+############## MODIFY PARAMETERS HERE ####################
+alpha = 1.0
+beta = 1.0
+QPheromone = 120
+antPerCity = 2
+file = "map6.txt"
+numIterations = 6
 #################       OBJECTS     #########################
 class ant:
     antPheromoneAmount = 0.0
@@ -57,7 +58,7 @@ def initLinks():
             if lines[i][j] == '0':
                 continue
             else:
-                newLink = link(lines[i][0], lines[0][j-1], 0.000001, lines[i][j], 0)
+                newLink = link(lines[i][0], lines[0][j-1], 0.001, lines[i][j], 0)
                 linkList.append(newLink)
 
     #create cities and each link associated with that starting city
@@ -126,7 +127,6 @@ def citySelection(newAnt, city):
         else:
             y += i.probability
             if x <= finalProb <= y: # if our guess is within prev link and curr, choose curr links destination city
-                i.linkPheromoneAmount = newAnt.antPheromoneAmount / i.distance #add pheromone
                 newAnt.totalDistanceTraveled += i.distance #update distance traveled
                 return i.end
             else:
@@ -157,12 +157,47 @@ def returnHome(newAnt, cityList):
                     newAnt.totalDistanceTraveled += j.distance
                     print("Going home...", j.end)               
 
+#returns city obj
+def findCity(city, cityList):
+    for i in cityList:
+        if city == i.city:
+            return i
+
+#adds pheromone after tour
+def attachPheromone(newAnt, cityList):
+    for i in range(len(newAnt.tabuList)):
+        city = findCity(newAnt.tabuList[i], cityList)
+        for j in city.atttachedLinks:
+            if i+1 >= len(newAnt.tabuList): #outside range
+                if j.start == newAnt.tabuList[i] and j.end == newAnt.tabuList[0]:
+                    j.linkPheromoneAmount = newAnt.antPheromoneAmount / j.distance #add pheromone
+            elif j.start == newAnt.tabuList[i] and j.end == newAnt.tabuList[i +1]:
+                j.linkPheromoneAmount = newAnt.antPheromoneAmount / j.distance #add pheromone
+
+def pheromoneMap(cityList):
+    map = []
+    for i in range(len(cityList)): # len 4
+        city = cityList[i]
+        for j in range(len(city.atttachedLinks)):
+            if j == i:
+                #add 0
+                map.append("0")
+            elif i > j:
+                map.append("0")
+            else:
+                link = city.atttachedLinks[j]
+                map.append(str(round(link.linkPheromoneAmount, 3)))
+    for i in range(0, len(map), 4):
+        print(map[i])
 
 def cityTour():
     global QPheromone
     global numIterations
+    bestDistance = 10000 #init set to some large value
+    tour = []
 
     cities, availableCities = initLinks()
+    #pheromoneMap(cities)
     antCount = 0
     for n in range(numIterations): # run for n iterations
         print("######################### ITERATION #######################", n)
@@ -176,8 +211,13 @@ def cityTour():
                 print("####     ANT     ####", j)
                 antTour(newAnt, i, cities)
                 returnHome(newAnt, cities)
+                attachPheromone(newAnt, cities)
+                if newAnt.totalDistanceTraveled < bestDistance:
+                    tour = newAnt.tabuList
+                    bestDistance = newAnt.totalDistanceTraveled
                 print("Distance traveled: ", newAnt.totalDistanceTraveled)
                 stats(newAnt, antCount)           
+    print("Best tour: ", tour, "Distance: ", bestDistance)
 
 def main():        
     global alpha
@@ -187,18 +227,12 @@ def main():
     global antPerCity
     global numIterations
 
-    print("ANT PER CITY: ")
-    antPerCity = int(input())
-    print("ALPHA: ")
-    alpha = float(input())
-    print("BETA: ")
-    beta = float(input())
-    print("ANT PHEROMONE Q: ")
-    QPheromone = float(input())
-    print("NUMBER OF ITERATIONS TO RUN: ")
-    numIterations = int(input())
-    print("FILE NAME: ")
-    file = input()
+    print("ANT PER CITY: ", antPerCity)
+    print("ALPHA: ", alpha)
+    print("BETA: ", beta)
+    print("ANT PHEROMONE Q: ", QPheromone)
+    print("NUMBER OF ITERATIONS TO RUN: ", numIterations)
+    print("FILE NAME: ", file)
 
     cityTour()
 
